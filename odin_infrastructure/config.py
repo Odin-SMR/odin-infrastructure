@@ -1,0 +1,7 @@
+ODIN_AWS_ACCOUNT = "991049544436"
+ODIN_AWS_REGION = "eu-north-1"
+ODIN_KEY_PAIR = "odin-ssh-keypair"
+ODIN_MONGO_DATA_VOLUME = "vol-056bfc7555f431d9f"
+ODIN_AVAILABILITY_ZONE = "eu-north-1a"
+ODIN_API_EIP = "eipalloc-085032752a6ae52dc"
+ODIN_CERTIFICATE_ARN = "arn:aws:acm:eu-north-1:991049544436:certificate/e51000b0-d0f0-4139-b2da-d847e49f3222"
