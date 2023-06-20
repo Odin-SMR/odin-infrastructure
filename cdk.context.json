@@ -1,0 +1,12 @@
+{
+  "availability-zones:account=991049544436:region=eu-north-1": [
+    "eu-north-1a",
+    "eu-north-1b",
+    "eu-north-1c"
+  ],
+  "ami:account=991049544436:filters.image-type.0=machine:filters.name.0=amzn-ami-vpc-nat-*:filters.state.0=available:owners.0=amazon:region=eu-north-1": "ami-06263ba3a945a4242",
+  "hosted-zone:account=991049544436:domainName=odin-smr.org:region=eu-north-1": {
+    "Id": "/hostedzone/Z088981230HHZ059W0GVL",
+    "Name": "odin-smr.org."
+  }
+}
