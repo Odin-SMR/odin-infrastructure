@@ -5,8 +5,6 @@ from odin_infrastructure.odin_api_stack import OdinAPIStack
 from odin_infrastructure.config import ODIN_AWS_ACCOUNT, ODIN_AWS_REGION
 
 
-# example tests. To run these tests, uncomment this file along with the example
-# resource in odin_infrastructure/odin_infrastructure_stack.py
 def test_sqs_queue_created():
     app = aws_cdk.App()
     stack = OdinAPIStack(
