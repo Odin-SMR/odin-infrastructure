@@ -38,7 +38,7 @@ class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
         odinapi_task: aws_ecs.FargateTaskDefinition = aws_ecs.FargateTaskDefinition(
             scope,
             "OdinAPITaskDefinition",
-            cpu=1024,
+            cpu=2048,
             memory_limit_mib=4096,
         )
         psql_bucket.grant_read_write(odinapi_task.task_role)
@@ -69,8 +69,6 @@ class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
         odinapi_task.add_container(
             "OdinAPIContainer",
             image=aws_ecs.ContainerImage.from_ecr_repository(ecr_repository),
-            memory_limit_mib=2048,
-            cpu=512,
             port_mappings=[
                 aws_ecs.PortMapping(
                     container_port=8000,
@@ -88,12 +86,11 @@ class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
                 "PGDBNAME": odin_pgdbname,
                 "PGUSER": odin_pguser,
                 "PGPASS": odin_pgpass,
-                "GUNICORN_CMD_ARGS": "-w 4 -b 0.0.0.0 -k gevent --timeout 60 --log-level debug",
             },
             health_check=aws_ecs.HealthCheck(
                 command=["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"],
-                interval=Duration.seconds(30),
-                start_period=Duration.seconds(5),
+                interval=Duration.seconds(60),
+                start_period=Duration.seconds(30),
                 timeout=Duration.seconds(5),
             ),
             logging=logging,
@@ -114,15 +111,17 @@ class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
             task_subnets=aws_ec2.SubnetSelection(
                 subnet_type=aws_ec2.SubnetType.PRIVATE_WITH_EGRESS
             ),
-            cpu=1024,
+            cpu=2048,
+            service_name="OdinFargateService",
             desired_count=1,
             task_definition=odinapi_task,
-            memory_limit_mib=2048,
+            memory_limit_mib=4096,
             public_load_balancer=True,
             protocol=aws_elasticloadbalancingv2.ApplicationProtocol.HTTPS,
             domain_name="odin-smr.org",
             domain_zone=hosted_zone,
             certificate=cert,
             vpc=vpc,
+            idle_timeout=Duration.seconds(360),
             redirect_http=True,
         )
