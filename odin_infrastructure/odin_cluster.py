@@ -19,7 +19,11 @@ from .config import ODIN_CERTIFICATE_ARN
 
 class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
     def __init__(
-        self, scope: Stack, id: str, vpc: aws_ec2.IVpc, mongo: aws_ec2.IInstance
+        self,
+        scope: Stack,
+        id: str,
+        mongo: aws_ec2.IInstance,
+        cluster: aws_ecs.ICluster,
     ):
         log_group = aws_logs.LogGroup(
             scope,
@@ -113,6 +117,7 @@ class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
             ),
             cpu=2048,
             service_name="OdinFargateService",
+            cluster=cluster,
             desired_count=1,
             task_definition=odinapi_task,
             memory_limit_mib=4096,
@@ -121,7 +126,6 @@ class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
             domain_name="odin-smr.org",
             domain_zone=hosted_zone,
             certificate=cert,
-            vpc=vpc,
             idle_timeout=Duration.seconds(360),
             redirect_http=True,
         )

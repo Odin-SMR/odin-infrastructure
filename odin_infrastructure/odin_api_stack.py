@@ -1,5 +1,6 @@
 from aws_cdk import Stack, aws_route53
 from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_ecs as ecs
 from constructs import Construct
 
 from .admin_host import AdminInstance
@@ -56,7 +57,10 @@ class OdinAPIStack(Stack):
         )
         mongo: ec2.IInstance = MongoInstance(self, "OdinMongo", vpc)
         admin: ec2.IInstance = AdminInstance(self, "OdinAdmin", vpc)
-        OdinService(self, "OdinAPIFargateService", vpc, mongo)
+        cluster: ecs.ICluster = ecs.Cluster(
+            self, "OdinCluster", vpc=vpc, cluster_name="OdinApiCluster"
+        )
+        OdinService(self, "OdinAPIFargateService", mongo, cluster)
 
         aws_route53.ARecord(
             self,
