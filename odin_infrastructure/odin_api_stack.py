@@ -77,7 +77,7 @@ class OdinAPIStack(Stack):
             timeout=Duration.seconds(20),
             healthy_threshold_count=2,
             unhealthy_threshold_count=3,
-            path="/"
+            path="/",
         )
 
         aws_route53.ARecord(
