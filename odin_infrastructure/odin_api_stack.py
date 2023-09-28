@@ -72,6 +72,14 @@ class OdinAPIStack(Stack):
             scale_out_cooldown=Duration.seconds(60),
         )
 
+        service.target_group.configure_health_check(
+            interval=Duration.seconds(120),
+            timeout=Duration.seconds(20),
+            healthy_threshold_count=2,
+            unhealthy_threshold_count=3,
+            path="/",
+        )
+
         aws_route53.ARecord(
             self,
             "OdinMongoPrivateAliasRecord",

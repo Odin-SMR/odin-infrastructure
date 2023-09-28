@@ -93,9 +93,9 @@ class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
             },
             health_check=aws_ecs.HealthCheck(
                 command=["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"],
-                interval=Duration.seconds(60),
-                start_period=Duration.seconds(30),
-                timeout=Duration.seconds(5),
+                interval=Duration.seconds(120),
+                timeout=Duration.seconds(20),
+                retries=5,
             ),
             logging=logging,
         )
