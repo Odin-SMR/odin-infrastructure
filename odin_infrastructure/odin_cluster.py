@@ -10,9 +10,10 @@ from aws_cdk import (
     aws_elasticloadbalancingv2,
     aws_logs,
     aws_route53,
-    aws_s3,
     aws_ssm,
 )
+
+from .grant_buckets import grant_read_buckets
 
 from .config import ODIN_CERTIFICATE_ARN
 
@@ -35,17 +36,26 @@ class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
 
         logging = aws_ecs.AwsLogDriver(stream_prefix="OdinAPI", log_group=log_group)
 
-        psql_bucket = aws_s3.Bucket.from_bucket_name(
-            scope, "OdinPsqlBucket", "odin-psql"
-        )
-
         odinapi_task: aws_ecs.FargateTaskDefinition = aws_ecs.FargateTaskDefinition(
             scope,
             "OdinAPITaskDefinition",
             cpu=2048,
             memory_limit_mib=4096,
         )
-        psql_bucket.grant_read_write(odinapi_task.task_role)
+        grant_read_buckets(
+            scope,
+            odinapi_task.task_role,
+            [
+                "odin-vds-data",
+                "odin-osiris",
+                "odin-smr",
+                "odin-era5",
+                "odin-solar",
+                "odin-zpt",
+                "odin-psql",
+            ],
+        )
+
         odin_secret_key = aws_ssm.StringParameter.from_string_parameter_name(
             scope, "OdinSecretKey", "/odin-api/secret-key"
         ).string_value
