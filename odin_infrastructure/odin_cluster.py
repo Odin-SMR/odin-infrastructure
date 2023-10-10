@@ -46,13 +46,14 @@ class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
             scope,
             odinapi_task.task_role,
             [
-                "odin-vds-data",
-                "odin-osiris",
-                "odin-smr",
+                "odin-apriori",
                 "odin-era5",
-                "odin-solar",
-                "odin-zpt",
+                "odin-osiris",
                 "odin-psql",
+                "odin-smr",
+                "odin-solar",
+                "odin-vds-data",
+                "odin-zpt",
             ],
         )
 
