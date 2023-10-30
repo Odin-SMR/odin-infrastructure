@@ -1,7 +1,7 @@
 from aws_cdk import Duration, Stack
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ecs as ecs
-from aws_cdk import aws_ecs_patterns, aws_route53
+from aws_cdk import aws_route53
 from constructs import Construct
 
 from .admin_host import AdminInstance
@@ -62,12 +62,12 @@ class OdinAPIStack(Stack):
             self, "OdinCluster", vpc=vpc, cluster_name="OdinApiCluster"
         )
         service = OdinService(self, "OdinAPIFargateService", mongo, cluster)
-        scaling = service.service.auto_scale_task_count(max_capacity=10, min_capacity=1)
+        scaling = service.service.auto_scale_task_count(max_capacity=20, min_capacity=1)
 
         # Scale the service based on CPU Utilization
         scaling.scale_on_cpu_utilization(
             "CpuScaling",
-            target_utilization_percent=80,
+            target_utilization_percent=50,
             scale_in_cooldown=Duration.seconds(60),
             scale_out_cooldown=Duration.seconds(60),
         )
@@ -76,8 +76,8 @@ class OdinAPIStack(Stack):
             interval=Duration.seconds(120),
             timeout=Duration.seconds(20),
             healthy_threshold_count=2,
-            unhealthy_threshold_count=3,
-            path="/",
+            unhealthy_threshold_count=7,
+            path="/rest_api/health_check",
         )
 
         aws_route53.ARecord(

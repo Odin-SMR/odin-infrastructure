@@ -103,7 +103,10 @@ class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
                 "PGPASS": odin_pgpass,
             },
             health_check=aws_ecs.HealthCheck(
-                command=["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"],
+                command=[
+                    "CMD-SHELL",
+                    "curl -f http://localhost:8000/rest_api/health_check || exit 1",
+                ],
                 interval=Duration.seconds(120),
                 timeout=Duration.seconds(20),
                 retries=5,
