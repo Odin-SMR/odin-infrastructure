@@ -62,7 +62,7 @@ class OdinAPIStack(Stack):
             self, "OdinCluster", vpc=vpc, cluster_name="OdinApiCluster"
         )
         service = OdinService(self, "OdinAPIFargateService", mongo, cluster)
-        scaling = service.service.auto_scale_task_count(max_capacity=20, min_capacity=1)
+        scaling = service.service.auto_scale_task_count(max_capacity=10, min_capacity=1)
 
         # Scale the service based on CPU Utilization
         scaling.scale_on_cpu_utilization(
@@ -70,6 +70,14 @@ class OdinAPIStack(Stack):
             target_utilization_percent=50,
             scale_in_cooldown=Duration.seconds(60),
             scale_out_cooldown=Duration.seconds(60),
+        )
+
+        scaling.scale_on_request_count(
+            "RequestCountScaling",
+            requests_per_target=400,
+            target_group=service.target_group,
+            scale_in_cooldown=Duration.seconds(60),
+            scale_out_cooldown=Duration.seconds(60)
         )
 
         service.target_group.configure_health_check(
