@@ -77,7 +77,7 @@ class OdinAPIStack(Stack):
             requests_per_target=400,
             target_group=service.target_group,
             scale_in_cooldown=Duration.seconds(60),
-            scale_out_cooldown=Duration.seconds(60)
+            scale_out_cooldown=Duration.seconds(60),
         )
 
         service.target_group.configure_health_check(
