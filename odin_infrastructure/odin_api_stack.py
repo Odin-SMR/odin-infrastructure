@@ -4,6 +4,8 @@ from aws_cdk import aws_ecs as ecs
 from aws_cdk import aws_route53
 from constructs import Construct
 
+from odin_infrastructure.odin_ui_cloudfront import OdinUICloudfront
+
 from .admin_host import AdminInstance
 from .config import ODIN_API_EIP
 from .mongo import MongoInstance
@@ -50,59 +52,34 @@ class OdinAPIStack(Stack):
             instance_id=nat_gateway_provider.configured_gateways[0].gateway_id,
         )
 
-        private_zone = aws_route53.PrivateHostedZone(
+        public_zone: aws_route53.IHostedZone = aws_route53.HostedZone.from_lookup(
+            self, "OdinPublicZone", domain_name="odin-smr.org"
+        )
+
+        private_zone: aws_route53.IHostedZone = aws_route53.PrivateHostedZone(
             self,
             "OdinPrivateZone",
             vpc=vpc,
             zone_name="odin",
         )
-        mongo: ec2.IInstance = MongoInstance(self, "OdinMongo", vpc)
-        admin: ec2.IInstance = AdminInstance(self, "OdinAdmin", vpc)
+
+        mongo: ec2.IInstance = MongoInstance(self, "OdinMongo", vpc, zone=private_zone)
+        admin: ec2.IInstance = AdminInstance(
+            self, "OdinAdmin", vpc, public_zone=public_zone, private_zone=private_zone
+        )
         cluster: ecs.ICluster = ecs.Cluster(
             self, "OdinCluster", vpc=vpc, cluster_name="OdinApiCluster"
         )
-        service = OdinService(self, "OdinAPIFargateService", mongo, cluster)
-        scaling = service.service.auto_scale_task_count(max_capacity=10, min_capacity=1)
-
-        # Scale the service based on CPU Utilization
-        scaling.scale_on_cpu_utilization(
-            "CpuScaling",
-            target_utilization_percent=50,
-            scale_in_cooldown=Duration.seconds(60),
-            scale_out_cooldown=Duration.seconds(60),
-        )
-
-        scaling.scale_on_request_count(
-            "RequestCountScaling",
-            requests_per_target=400,
-            target_group=service.target_group,
-            scale_in_cooldown=Duration.seconds(60),
-            scale_out_cooldown=Duration.seconds(60),
-        )
-
-        service.target_group.configure_health_check(
-            interval=Duration.seconds(120),
-            timeout=Duration.seconds(20),
-            healthy_threshold_count=2,
-            unhealthy_threshold_count=7,
-            path="/rest_api/health_check",
-        )
-
-        aws_route53.ARecord(
+        service = OdinService(
             self,
-            "OdinMongoPrivateAliasRecord",
-            zone=private_zone,
-            target=aws_route53.RecordTarget.from_ip_addresses(
-                mongo.instance_private_ip,
-            ),
-            record_name="mongo.odin",
+            "OdinAPIFargateService",
+            mongo,
+            cluster,
         )
-        aws_route53.ARecord(
+
+        OdinUICloudfront(
             self,
-            "OdinAdminPrivateAliasRecord",
-            zone=private_zone,
-            target=aws_route53.RecordTarget.from_ip_addresses(
-                admin.instance_private_ip,
-            ),
-            record_name="admin.odin",
+            "OdinUICloudFront",
+            alb_name=service.load_balancer.load_balancer_dns_name,
+            zone=public_zone,
         )
