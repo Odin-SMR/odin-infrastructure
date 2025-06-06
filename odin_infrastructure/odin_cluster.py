@@ -2,20 +2,16 @@ from aws_cdk import (
     Duration,
     RemovalPolicy,
     Stack,
-    aws_certificatemanager,
     aws_ec2,
     aws_ecs,
     aws_ecs_patterns,
     aws_ecr,
     aws_elasticloadbalancingv2,
     aws_logs,
-    aws_route53,
     aws_ssm,
 )
 
 from .grant_buckets import grant_read_buckets
-
-from .config import ODIN_CERTIFICATE_ARN
 
 
 class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
@@ -114,15 +110,6 @@ class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
             logging=logging,
         )
 
-        hosted_zone = aws_route53.HostedZone.from_lookup(
-            scope, "OdinHostedZone", domain_name="odin-smr.org"
-        )
-        cert = aws_certificatemanager.Certificate.from_certificate_arn(
-            scope,
-            "OdinSiteCertificate",
-            certificate_arn=ODIN_CERTIFICATE_ARN,
-        )
-
         super().__init__(
             scope,
             id,
@@ -136,10 +123,33 @@ class OdinService(aws_ecs_patterns.ApplicationLoadBalancedFargateService):
             task_definition=odinapi_task,
             memory_limit_mib=4096,
             public_load_balancer=True,
-            protocol=aws_elasticloadbalancingv2.ApplicationProtocol.HTTPS,
-            domain_name="odin-smr.org",
-            domain_zone=hosted_zone,
-            certificate=cert,
+            protocol=aws_elasticloadbalancingv2.ApplicationProtocol.HTTP,
             idle_timeout=Duration.seconds(360),
-            redirect_http=True,
+            redirect_http=False,
+        )
+
+        scaling = self.service.auto_scale_task_count(max_capacity=10, min_capacity=1)
+
+        # Scale the service based on CPU Utilization
+        scaling.scale_on_cpu_utilization(
+            "CpuScaling",
+            target_utilization_percent=50,
+            scale_in_cooldown=Duration.seconds(60),
+            scale_out_cooldown=Duration.seconds(60),
+        )
+
+        scaling.scale_on_request_count(
+            "RequestCountScaling",
+            requests_per_target=400,
+            target_group=self.target_group,
+            scale_in_cooldown=Duration.seconds(60),
+            scale_out_cooldown=Duration.seconds(60),
+        )
+
+        self.target_group.configure_health_check(
+            interval=Duration.seconds(120),
+            timeout=Duration.seconds(20),
+            healthy_threshold_count=2,
+            unhealthy_threshold_count=7,
+            path="/rest_api/health_check",
         )

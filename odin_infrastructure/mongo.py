@@ -4,6 +4,7 @@ from aws_cdk import RemovalPolicy
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_logs as logs
+from aws_cdk import aws_route53
 from constructs import Construct
 
 from .config import (
@@ -17,7 +18,9 @@ LOG_GROUP = "/Odin/Mongo"
 
 
 class MongoInstance(ec2.Instance):
-    def __init__(self, scope: Construct, id: str, vpc: ec2.IVpc) -> None:
+    def __init__(
+        self, scope: Construct, id: str, vpc: ec2.IVpc, zone: aws_route53.IHostedZone
+    ) -> None:
         vpc_subnets = ec2.SubnetSelection(
             subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
         )
@@ -103,4 +106,13 @@ class MongoInstance(ec2.Instance):
             log_group_name="/Odin/Mongo",
             removal_policy=RemovalPolicy.DESTROY,
             retention=logs.RetentionDays.SIX_MONTHS,
+        )
+        aws_route53.ARecord(
+            scope,
+            "OdinMongoPrivateAliasRecord",
+            zone=zone,
+            target=aws_route53.RecordTarget.from_ip_addresses(
+                self.instance_private_ip,
+            ),
+            record_name="mongo.odin",
         )

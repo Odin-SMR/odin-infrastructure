@@ -8,5 +8,9 @@
   "hosted-zone:account=991049544436:domainName=odin-smr.org:region=eu-north-1": {
     "Id": "/hostedzone/Z088981230HHZ059W0GVL",
     "Name": "odin-smr.org."
-  }
+  },
+  "acknowledged-issue-numbers": [
+    32775,
+    32775
+  ]
 }

@@ -14,7 +14,14 @@ LOG_GROUP = "/Odin/Admin"
 
 
 class AdminInstance(ec2.Instance):
-    def __init__(self, scope: Construct, id: str, vpc: ec2.IVpc) -> None:
+    def __init__(
+        self,
+        scope: Construct,
+        id: str,
+        vpc: ec2.IVpc,
+        public_zone: aws_route53.IHostedZone,
+        private_zone: aws_route53.IHostedZone,
+    ) -> None:
         vpc_subnets = ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC)
         security_group = ec2.SecurityGroup(scope, "OdinAdminSecurityGroup", vpc=vpc)
         security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(22))
@@ -75,13 +82,20 @@ class AdminInstance(ec2.Instance):
             removal_policy=RemovalPolicy.DESTROY,
             retention=logs.RetentionDays.SIX_MONTHS,
         )
-        public_zone = aws_route53.HostedZone.from_lookup(
-            scope, "OdinAdminHostedZone", domain_name="odin-smr.org"
-        )
+
         aws_route53.ARecord(
             scope,
             "OdinAdminAliasRecord",
             zone=public_zone,
             target=aws_route53.RecordTarget.from_ip_addresses(self.instance_public_ip),
             record_name="admin.odin-smr.org",
+        )
+        aws_route53.ARecord(
+            scope,
+            "OdinAdminPrivateAliasRecord",
+            zone=private_zone,
+            target=aws_route53.RecordTarget.from_ip_addresses(
+                self.instance_private_ip,
+            ),
+            record_name="admin.odin",
         )
