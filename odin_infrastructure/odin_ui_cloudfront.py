@@ -69,7 +69,7 @@ class OdinUICloudfront(cloudfront.Distribution):
                 )
             ],
         )
-        
+
         route53.ARecord(
             scope,
             "OdinUIAliasRecord",
