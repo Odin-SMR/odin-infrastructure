@@ -80,6 +80,6 @@ class OdinAPIStack(Stack):
         OdinUICloudfront(
             self,
             "OdinUICloudFront",
-            alb_name=service.load_balancer.load_balancer_dns_name,
+            alb_name=service.load_balancer,
             zone=public_zone,
         )
